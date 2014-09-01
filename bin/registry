@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+var debug = require('debug')('registry');
+
+var app = require('../app');
+
+var port = 8000;
+var server = app.listen(port, function() {
+    debug('listening on %d', port);
+});
