@@ -17,6 +17,10 @@ app.use(function(req, res, next) {
         return next();
     }
 
+    if (auth_header.indexOf('Basic') >= 0) {
+        return next();
+    }
+
     debug('Authorization header found');
     var token = auth_header.replace('Bearer ', '');
 
