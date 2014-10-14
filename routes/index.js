@@ -7,6 +7,8 @@ var async = require('async');
 var shasum_url = require('../lib/shasum_url');
 var github = require('../lib/github');
 
+var github_uri = process.env.GITHUB_URL || 'https://api.github.com';
+
 var router = express.Router();
 
 // parse the module name into a the separate user/repo parts
@@ -109,7 +111,7 @@ router.get('/:module/:version/tarball', function(req, res, next) {
     var tag = req.param('version');
 
     //https://api.github.com/repos/<user>/<repo>/tarball/<tag | commitsh>'
-    var tarball_url = 'https://api.github.com/repos/' + user + '/' + repo + '/tarball/' + tag;
+    var tarball_url = github_uri + '/repos/' + user + '/' + repo + '/tarball/' + tag;
 
     debug('proxy tarball', tarball_url);
 

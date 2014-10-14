@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+var dotenv = require('dotenv').load();
 var debug = require('debug')('registry');
 
 var app = require('../app');
