@@ -9,7 +9,7 @@
     "express": "4.8.7",
     "httperrors": "0.5.0",
     "request": "2.40.0",
-    "dotenv": "0.4.0"
+    "dotenv": "defunctzombie/dotenv#84d8f45"
   },
   "engines": {
     "node": "0.10.31"
