@@ -7,7 +7,7 @@ var async = require('async');
 var shasum_url = require('../lib/shasum_url');
 var github = require('../lib/github');
 
-var github_uri = process.env.GITHUB_URL || 'https://api.github.com';
+var github_uri = process.env.GITHUB_API_URL || 'https://api.github.com';
 
 var router = express.Router();
 
@@ -59,12 +59,15 @@ router.get('/:module', function(req, res, next) {
                 return cb(err)
             }
 
-            cb(null, {
-                name: name,
-                version: version,
-                shasum: shasum,
-                tarball: tag.tarball_url
-            });
+            github.file(user, repo, tag.name, 'package.json', opt, req.curry(function(package) {
+                cb(null, {
+                    name: name,
+                    version: version,
+                    shasum: shasum,
+                    tarball: tag.tarball_url,
+                    package: package
+                });
+            }));
         });
     };
 
@@ -81,6 +84,9 @@ router.get('/:module', function(req, res, next) {
                 map[tag.version] = {
                     name: spec.name,
                     version: tag.version,
+                    dependencies: tag.package.dependencies,
+                    devDependencies: tag.package.devDependencies,
+                    scripts: tag.package.scripts,
                     dist: {
                         shasum: tag.shasum,
                         tarball: req.href + '/' + encodeURIComponent(spec.name) + '/' + tag.name + '/tarball'
@@ -97,6 +103,72 @@ router.get('/:module', function(req, res, next) {
                 'dist-tags': {
                     latest: latest_version
                 }
+            });
+        }));
+    }));
+});
+
+// use this proxy versus direct github for authroization
+router.get('/:module/:version', function(req, res, next) {
+    var version = req.param('version');
+
+    var spec = req.module_spec;
+
+    var user = spec.user;
+    var repo = spec.repo;
+    debug('details for %s/%s', user, repo);
+
+    var opt = {
+        token: req.oauth_token
+    };
+
+    function shasum_tag_map(tag, cb) {
+        var name = tag.name;
+        var version = name.replace(/^v/, '');
+
+        shasum_url(tag.tarball_url, opt, function(err, shasum) {
+            if (err) {
+                return cb(err)
+            }
+
+            github.file(user, repo, tag.name, 'package.json', opt, req.curry(function(package) {
+                cb(null, {
+                    name: name,
+                    version: version,
+                    shasum: shasum,
+                    tarball: tag.tarball_url,
+                    package: package
+                });
+            }));
+        });
+    };
+
+    github.tags(user, repo, opt, req.curry(function(tags) {
+        if (tags.length === 0) {
+            return next(NotFound());
+        }
+
+        tags = tags.filter(function(tag) {
+            return tag.name === 'v' + version;
+        });
+
+        if (tags.length !== 1) {
+            return res.sendStatus(404);
+        }
+
+        var tag = tags.shift();
+
+        shasum_tag_map(tag, req.curry(function(tag) {
+            res.json({
+                    name: spec.name,
+                    version: tag.version,
+                    dependencies: tag.package.dependencies,
+                    devDependencies: tag.package.devDependencies,
+                    scripts: tag.package.scripts,
+                    dist: {
+                        shasum: tag.shasum,
+                        tarball: req.href + '/' + encodeURIComponent(spec.name) + '/' + tag.name + '/tarball'
+                    }
             });
         }));
     }));
