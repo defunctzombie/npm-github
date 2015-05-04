@@ -1,4 +1,4 @@
-FROM node:0.10.32
+FROM node:0.10.38
 MAINTAINER Roman Shtylman <shtylman@gmail.com>
 
 RUN mkdir -p /usr/src/app
